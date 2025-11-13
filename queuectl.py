@@ -236,56 +236,7 @@ def run_command(job, timeout=None):
     except Exception as e:
         return False, f"Exception: {e}"
 
-def worker_loop(stop_event: Event, worker_id: int):
-    cfg = load_config()
-    poll = float(cfg.get("worker_poll_interval", 1.0))
-    conn = get_conn()
-    pid = os.getpid()
-    click.echo(f"[worker-{worker_id}] start pid={pid}")
-    while not stop_event.is_set():
-        try:
-            job = lock_next_job(conn)
-            if not job:
-                # nothing to do
-                time.sleep(poll)
-                continue
-            # we have the job in 'processing' state
-            click.echo(f"[worker-{worker_id}] picked job {job['id']} cmd='{job['command']}' attempts={job['attempts']}")
-            success, result = run_command(job, timeout=job.get("timeout"))
-            now = now_iso()
-            cur = conn.cursor()
-            if success:
-                cur.execute("UPDATE jobs SET state = ?, updated_at = ?, last_error = ? WHERE id = ?", ("completed", now, None, job["id"]))
-                conn.commit()
-                click.echo(f"[worker-{worker_id}] job {job['id']} completed.")
-            else:
-                # failed attempt
-                attempts = job["attempts"] + 1
-                max_retries = job["max_retries"]
-                base = int(cfg.get("backoff_base", DEFAULT_CONFIG["backoff_base"]))
-                if attempts > max_retries:
-                    # move to dead
-                    cur.execute("UPDATE jobs SET state = ?, attempts = ?, updated_at = ?, last_error = ? WHERE id = ?",
-                                ("dead", attempts, now, str(result), job["id"]))
-                    conn.commit()
-                    click.echo(f"[worker-{worker_id}] job {job['id']} moved to DLQ (dead). last_error={result}")
-                else:
-                    # compute exponential backoff delay = base ** attempts seconds
-                    delay_secs = (base ** attempts)
-                    next_run = (datetime.now(timezone.utc) + timedelta(seconds=delay_secs)).astimezone(timezone.utc).isoformat()
-                    cur.execute("UPDATE jobs SET state = ?, attempts = ?, next_run_at = ?, updated_at = ?, last_error = ? WHERE id = ?",
-                                ("pending", attempts, next_run, now, str(result), job["id"]))
-                    conn.commit()
-                    click.echo(f"[worker-{worker_id}] job {job['id']} failed; will retry in {delay_secs}s (attempt {attempts}/{max_retries}). error={result}")
-        except sqlite3.OperationalError as e:
-            # database locked or similar; backoff then continue
-            click.echo(f"[worker-{worker_id}] sqlite operational error: {e}; sleeping")
-            time.sleep(1)
-        except Exception as e:
-            click.echo(f"[worker-{worker_id}] unexpected error: {e}")
-            time.sleep(1)
-    conn.close()
-    click.echo(f"[worker-{worker_id}] stopped.")
+
 
 # ---------------------------
 # Worker management (main process)

@@ -130,6 +130,8 @@ Configure settings like the default number of retries and the backoff base.
     python queuectl.py config set backoff-base 3
     ```
 
+    *Note: Configuration keys provided via the CLI use kebab-case (e.g., `max-retries`), which are automatically converted to snake_case (e.g., `max_retries`) for internal storage in `config.json`.*
+
 ## Testing Instructions
 
 A simple test script, `test_flow.sh`, is included to validate the core functionality. It clears the database, enqueues a mix of successful and failing jobs, and provides instructions for you to see the system in action.
@@ -150,6 +152,10 @@ A simple test script, `test_flow.sh`, is included to validate the core functiona
     # Check the DLQ for the failed job
     python queuectl.py dlq list
     ```
+
+## Demo Video
+
+A live demonstration of the CLI in action can be found here: [Link to Video on Google Drive/Dropbox]
 
 ## Assumptions & Trade-offs
 
