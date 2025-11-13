@@ -132,6 +132,10 @@ Configure settings like the default number of retries and the backoff base.
 
     *Note: Configuration keys provided via the CLI use kebab-case (e.g., `max-retries`), which are automatically converted to snake_case (e.g., `max_retries`) for internal storage in `config.json`.*
 
+## Architecture Diagram
+
+![image][architecture_diagram.png]
+
 ## Testing Instructions
 
 A simple test script, `test_flow.sh`, is included to validate the core functionality. It clears the database, enqueues a mix of successful and failing jobs, and provides instructions for you to see the system in action.
