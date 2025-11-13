@@ -134,7 +134,7 @@ Configure settings like the default number of retries and the backoff base.
 
 ## Architecture Diagram
 
-![image][architecture_diagram.png]
+![image](architecture_diagram.png)
 
 ## Testing Instructions
 
